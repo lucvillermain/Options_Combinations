@@ -56,17 +56,17 @@ def call_function(K_call):
     PandL = np.concatenate((liste_OTM, liste_ITM))[:1000] - price_call(S, K_call, sigma, T, r)
     return PandL
 
-# Initialisation de session_state
+
 if 'liste_options' not in st.session_state:
     st.session_state.liste_options = np.zeros(1000)
 
 if 'data' not in st.session_state:
     st.session_state.data = []
 
-# Étape 1 : Sélectionner le strike
+
 selected_strike = st.selectbox('Pick the strike AND THEN click on the position you want with the latter ', range(1, 1001))
 st.write('(You can enter the strike using your keyboard) ')
-# Étape 2 : Boutons pour ajouter des options après sélection du strike
+
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -89,12 +89,12 @@ with col4:
         st.session_state.liste_options -= put_function(selected_strike)
         st.session_state.data.append(["Short Put", selected_strike])
 
-# Bouton RESET pour réinitialiser toutes les options
+
 if st.button('RESET'):
     st.session_state.liste_options = np.zeros(1000)  # Remettre à zéro
     st.session_state.data = []  # Vider la liste des options
 
-# Affichage de la table récapitulative des options ajoutées
+
 if st.session_state.data:
     df = pd.DataFrame(st.session_state.data, columns=["Option", "Strike"])
     st.write("Table Recap of positions:")
