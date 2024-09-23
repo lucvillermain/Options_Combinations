@@ -32,27 +32,27 @@ sigma = st.sidebar.selectbox('Volatility (%)', [round(x * 0.25, 2) for x in rang
 
 liste_spot = np.arange(1, 1001, 1)  # 1000 éléments
 
-# Fonction pour calculer le prix d'un Call
+
 def price_call(S, K, sigma, T, r):
     d1 = (m.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * m.sqrt(T))
     d2 = d1 - sigma * m.sqrt(T)
     return S * norm.cdf(d1) - K * m.exp(-r * T) * norm.cdf(d2)
 
-# Fonction pour calculer le prix d'un Put
+
 def price_put(S, K, sigma, T, r):
     return price_call(S, K, sigma, T, r) - S + K * m.exp(-r * T)  # Parité put-call
 
-# Fonction pour générer le P&L d'un Put (1000 éléments)
+
 def put_function(K_put):
     liste_OTM = np.zeros(1001 - K_put)  # Hors de la monnaie
     liste_ITM = K_put - np.arange(0, K_put)  # Dans la monnaie
     PandL = np.concatenate((liste_ITM, liste_OTM))[:1000] - price_put(S, K_put, sigma, T, r)
     return PandL
 
-# Fonction pour générer le P&L d'un Call (1000 éléments)
+
 def call_function(K_call):
-    liste_OTM = np.zeros(K_call + 1)  # Hors de la monnaie
-    liste_ITM = np.arange(K_call + 1, 1001) - K_call  # Dans la monnaie
+    liste_OTM = np.zeros(K_call + 1)  
+    liste_ITM = np.arange(K_call + 1, 1001) - K_call  
     PandL = np.concatenate((liste_OTM, liste_ITM))[:1000] - price_call(S, K_call, sigma, T, r)
     return PandL
 
