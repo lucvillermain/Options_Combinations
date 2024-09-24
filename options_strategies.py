@@ -3,7 +3,10 @@ import pandas as pd  # I'll use it to recap the different options that are input
 import numpy as np  # vectorisation for quicker computation
 import matplotlib.pyplot as plt   # plotting the P&L graphs
 import math as m  # maths functions
-from scipy.stats import norm    # N(d1) and N(d2) in BS princing
+
+
+def norm_cdf_math(x):
+    return 0.5 * (1 + m.erf(x / m.sqrt(2)))
 
 st.set_page_config(layout="wide")
 
@@ -30,43 +33,52 @@ r = st.sidebar.selectbox('Risk-free Interest Rate %(r)', [round(x * 0.25, 2) for
 T = st.sidebar.selectbox('Time to expiry in days (T)', range(1, 366)) / 365  # Convertir en années
 sigma = st.sidebar.selectbox('Volatility (%)', [round(x * 0.25, 2) for x in range(4, 121)])
 
+sigma = sigma/100
+r = r/100
+
 liste_spot = np.arange(1, 1001, 1)  # 1000 éléments
 
-
+# Fonction pour calculer le prix d'un Call
 def price_call(S, K, sigma, T, r):
     d1 = (m.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * m.sqrt(T))
     d2 = d1 - sigma * m.sqrt(T)
-    return S * norm.cdf(d1) - K * m.exp(-r * T) * norm.cdf(d2)
+    return S * norm_cdf_math(d1) - K * m.exp(-r * T) * norm_cdf_math(d2)
 
-
+# Fonction pour calculer le prix d'un Put
 def price_put(S, K, sigma, T, r):
     return price_call(S, K, sigma, T, r) - S + K * m.exp(-r * T)  # Parité put-call
 
 
+
+# Fonction pour générer le P&L d'un Put (1000 éléments)
 def put_function(K_put):
-    liste_OTM = np.zeros(1001 - K_put)  # Hors de la monnaie
-    liste_ITM = K_put - np.arange(0, K_put)  # Dans la monnaie
-    PandL = np.concatenate((liste_ITM, liste_OTM))[:1000] - price_put(S, K_put, sigma, T, r)
+    liste_OTM = np.array([0 for i in np.arange(K_put,1001,1)])
+    liste_ITM = np.array([K_put-i for i in np.arange(1,K_put,1)])  
+    PandL = np.concatenate((liste_ITM, liste_OTM)) - price_put(S, K_put, sigma, T, r)
     return PandL
 
-
+# Fonction pour générer le P&L d'un Call (1000 éléments)
 def call_function(K_call):
-    liste_OTM = np.zeros(K_call + 1)  
-    liste_ITM = np.arange(K_call + 1, 1001) - K_call  
-    PandL = np.concatenate((liste_OTM, liste_ITM))[:1000] - price_call(S, K_call, sigma, T, r)
+    liste_OTM = np.array([0 for i in range(1,K_call+1)])
+    liste_ITM = np.array([i-K_call for i in np.arange(K_call+1,1001,1)])
+    PandL = np.concatenate((liste_OTM, liste_ITM)) - price_call(S, K_call, sigma, T, r)
     return PandL
 
 
+
+
+
+# Initialisation de session_state
 if 'liste_options' not in st.session_state:
     st.session_state.liste_options = np.zeros(1000)
 
 if 'data' not in st.session_state:
     st.session_state.data = []
 
-
+# Étape 1 : Sélectionner le strike
 selected_strike = st.selectbox('Pick the strike AND THEN click on the position you want with the latter ', range(1, 1001))
 st.write('(You can enter the strike using your keyboard) ')
-
+# Étape 2 : Boutons pour ajouter des options après sélection du strike
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -89,12 +101,12 @@ with col4:
         st.session_state.liste_options -= put_function(selected_strike)
         st.session_state.data.append(["Short Put", selected_strike])
 
-
+# Bouton RESET pour réinitialiser toutes les options
 if st.button('RESET'):
     st.session_state.liste_options = np.zeros(1000)  # Remettre à zéro
     st.session_state.data = []  # Vider la liste des options
 
-
+# Affichage de la table récapitulative des options ajoutées
 if st.session_state.data:
     df = pd.DataFrame(st.session_state.data, columns=["Option", "Strike"])
     st.write("Table Recap of positions:")
@@ -119,6 +131,9 @@ ax.axhline(0, color='black', linewidth=1)
 
 # Afficher le graphique dans Streamlit
 st.pyplot(fig)
+
+
+
 
 
 
